@@ -1,7 +1,6 @@
 package com.example.demo.domain;
 
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,12 +20,14 @@ import java.util.Set;
 @Table(indexes = {
         @Index(columnList = "title"),
         @Index(columnList = "hashtag"),
-        @Index(columnList = "createdAt"),
+        @Index(columnList = "createdAt"),   // @MappedSuperclass 로 분리했지만 인덱싱은 여기서 헤야 함
         @Index(columnList = "createdBy")
 }) // db의 인덱싱 등록
-@EntityListeners(AuditingEntityListener.class)  // Auditing 사용 설정
 @Entity
-public class Article {
+public class Article extends AuditingFields {
+    // Auditing을 분리하는 방법 2가지
+    // @Embedded: 공통 부분을 클래스로 만들어서 그걸 사용하는 곳에 필드로 추가하여 사용
+    // @MappedSuperclass: 공통 부분을 클래스로 만들어서 그걸 사용하는 곳에서 상속받아 사용
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,22 +48,6 @@ public class Article {
     @OrderBy("id")
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)    // ArticleComment 객체의 @ManyToOne 가 붙은 필드명을 넣어주기
     private final Set<ArticleComment> articleComments = new LinkedHashSet<>();
-
-    @CreatedDate
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    @CreatedBy
-    @Column(nullable = false, length = 100)
-    private String createdBy;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime modifiedAt;
-
-    @LastModifiedBy
-    @Column(nullable = false, length = 100)
-    private String modifiedBy;
 
     // JPA 엔티티 하이버네이트는 기본 생성자 필수
     protected Article() {}
