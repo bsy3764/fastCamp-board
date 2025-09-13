@@ -9,11 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// application.yml에서 spring.profiles로 프로필을 설정
+@ActiveProfiles("testdb")   // 설정한 프로필을 활성화
 @DisplayName("JPA Conn test")
 @Import(JpaConfig.class)
 @DataJpaTest
