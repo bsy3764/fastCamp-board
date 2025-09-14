@@ -27,6 +27,7 @@ class ArticleControllerTest {
         mvc.perform(MockMvcRequestBuilders.get("/articles"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML))
+                .andExpect(MockMvcResultMatchers.view().name("articles/index"))
                 .andExpect(MockMvcResultMatchers.model().attributeExists("articles"));
     }
 
@@ -36,7 +37,9 @@ class ArticleControllerTest {
         mvc.perform(MockMvcRequestBuilders.get("/articles/1"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML))
-                .andExpect(MockMvcResultMatchers.model().attributeExists("article"));
+                .andExpect(MockMvcResultMatchers.view().name("articles/detail"))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("article"))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("articleComments"));
     }
 
     @DisplayName("게시글 검색 전용 페이지")
@@ -44,7 +47,8 @@ class ArticleControllerTest {
     void getMethodArticleSearchTest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/articles/search"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML));
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("articles/search"));
     }
 
     @DisplayName("게시글 해시태그 검색 페이지")
@@ -52,7 +56,8 @@ class ArticleControllerTest {
     void getMethodArticleHashtagSearchTest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/articles/search-hashtag"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML));
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.TEXT_HTML))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("articles/search-hashtag"));
     }
 
 }
