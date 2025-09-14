@@ -233,4 +233,63 @@ gradle-app.setting
 # Java heap dump
 *.hprof
 
+# Gradle 캐시
+/.gradle/
+/caches/
+/daemon/
+
+/tmp/
+/*.tmp/
+/*.log/
+
+# 자동 생성된 소스
+/src/main/generated/
+
+# Gradle 캐시/워커/임시 파일
+/.gradle/
+caches/
+daemon/
+native/
+wrapper/      # 만약 wrapper directory가 "Gradle user home" 내부에 생기고, 프로젝트 전용으로 만들었다면
+.tmp/
+
+# 빌드 출력
+/build/
+/out/    # IntelliJ에서 나오는 output 폴더 있을 경우
+**/build/
+
+# QueryDSL 자동 생성된 소스 (Q-클래스 등)
+/src/main/generated/
+/**/generated/
+
+# annotationProcessor가 생성하는 소스
+/build/generated/sources/annotationProcessor/
+/build/generated/querydsl/
+/build/generated/
+
+# IDEA & 사용자 설정 파일
+/.idea/
+/*.iml
+/*.ipr
+/.classpath
+/.project
+
+# OS별 불필요한 파일
+.DS_Store
+Thumbs.db
+
+# 기타 임시 파일들
+*.tmp
+
+# 로그, 백업
+*.log
+*~
+
+# Gradle Wrapper 관련 — 무시하지 말아야 할 파일들 제외
+/wrapper/dists/
+!/gradlew
+!/gradlew.bat
+!/gradle/wrapper/gradle-wrapper.jar
+!/gradle/wrapper/gradle-wrapper.properties
+
 # End of https://www.toptal.com/developers/gitignore/api/windows,java,git,gradle,maven,macos,intellij+all
