@@ -32,7 +32,6 @@ class ArticleControllerTest {
                 .andExpect(MockMvcResultMatchers.model().attributeExists("articles"));
     }
 
-    @Disabled
     @DisplayName("게시글 페이지")
     @Test
     void getMethodArticleTest() throws Exception {
