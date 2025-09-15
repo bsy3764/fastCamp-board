@@ -11,6 +11,7 @@ import java.util.List;
 @RequestMapping("/articles")
 @Controller
 public class ArticleController {
+    // DefaultLoginPageGenerationFilter 에서 제공하는 기본 로그인 화면 사용
 
     @GetMapping
     public String articles(ModelMap map) {
