@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class ArticleService {
 
     @Transactional(readOnly = true)
     public ArticleDto searchArticle(Long articleId) {
-        return null;
+        return ArticleDto.of(LocalDateTime.now(), "uno", "title", "content", "#java");
     }
 
     public void saveArticle(ArticleDto dto) {
