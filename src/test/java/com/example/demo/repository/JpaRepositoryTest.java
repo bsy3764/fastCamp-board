@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.config.JpaConfig;
 import com.example.demo.domain.Article;
 import com.example.demo.domain.ArticleComment;
+import com.example.demo.domain.UserAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,12 +25,15 @@ class JpaRepositoryTest {
 
     private final ArticleRepository articleRepository;
     private final ArticleCommentRepository articleCommentRepository;
+    private final UserAccountRepository userAccountRepository;
 
     public JpaRepositoryTest(
             @Autowired ArticleRepository articleRepository,
-            @Autowired ArticleCommentRepository articleCommentRepository) {
+            @Autowired ArticleCommentRepository articleCommentRepository,
+            @Autowired UserAccountRepository userAccountRepository) {
         this.articleRepository = articleRepository;
         this.articleCommentRepository = articleCommentRepository;
+        this.userAccountRepository = userAccountRepository;
     }
 
     @Test
@@ -47,7 +51,9 @@ class JpaRepositoryTest {
     void insertTest() {
         // given
         long previousCount = articleRepository.count();
-        Article article = Article.of("new title", "new content", "#spring");
+        UserAccount userAccount = userAccountRepository.save(
+                UserAccount.of("uno", "password", "a@mail.com", "nick"));
+        Article article = Article.of(userAccount,"new title", "new content", "#spring");
 
         // when
         Article saved = articleRepository.save(article);
@@ -59,7 +65,9 @@ class JpaRepositoryTest {
     @Test
     void updateTest() {
         // given
-        Article article = Article.of("new title", "new content", "#spring");
+        UserAccount userAccount = userAccountRepository.save(
+                UserAccount.of("uno", "password", "a@mail.com", "nick"));
+        Article article = Article.of(userAccount,"new title", "new content", "#spring");
         Article saved = articleRepository.save(article);
         String updatedHashtag = "#springboot";
         saved.setHashtag(updatedHashtag);
@@ -74,11 +82,13 @@ class JpaRepositoryTest {
     @Test
     void deleteTest() {
         // given
-        Article article = Article.of("new title", "new content", "#spring");
+        UserAccount userAccount = userAccountRepository.save(
+                UserAccount.of("uno", "password", "a@mail.com", "nick"));
+        Article article = Article.of(userAccount,"new title", "new content", "#spring");
 
         // 댓글을 Article에 직접 추가해서 연관관계 주입
-        ArticleComment comment1 = ArticleComment.of(article, "comment1");
-        ArticleComment comment2 = ArticleComment.of(article, "comment2");
+        ArticleComment comment1 = ArticleComment.of(article, userAccount,"comment1");
+        ArticleComment comment2 = ArticleComment.of(article, userAccount,"comment2");
 
         // 연관관계 수동 설정 (양방향을 article -> comment, comment -> article 양쪽 연결)
         article.getArticleComments().add(comment1);

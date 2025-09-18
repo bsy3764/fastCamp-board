@@ -18,7 +18,7 @@ public class UserAccount extends AuditingFields {
 
     @Setter
     @Column(nullable = false)
-    private String password;
+    private String userPassword;    // db등의 예약어 피하기 위해
 
     @Setter
     @Column(length = 100)
@@ -34,20 +34,20 @@ public class UserAccount extends AuditingFields {
     // JPA 엔티티 하이버네이트는 기본 생성자 필수
     protected UserAccount() {}
 
-    private UserAccount(String id, String password, String email, String nickname, String memo) {
+    private UserAccount(String id, String userPassword, String email, String nickname, String memo) {
         this.id = id;
-        this.password = password;
+        this.userPassword = userPassword;
         this.email = email;
         this.nickname = nickname;
         this.memo = memo;
     }
 
-    public static UserAccount of(String id, String password, String email, String nickname, String memo) {
-        return new UserAccount(id, password, email, nickname, memo);
+    public static UserAccount of(String id, String userPassword, String email, String nickname, String memo) {
+        return new UserAccount(id, userPassword, email, nickname, memo);
     }
 
-    public static UserAccount of(String id, String password, String email, String nickname) {
-        return UserAccount.of(id, password, email, nickname, null);
+    public static UserAccount of(String id, String userPassword, String email, String nickname) {
+        return UserAccount.of(id, userPassword, email, nickname, null);
     }
 
     @Override

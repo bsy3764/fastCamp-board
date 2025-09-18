@@ -2,12 +2,14 @@ package com.example.demo.service;
 
 import com.example.demo.domain.Article;
 import com.example.demo.domain.ArticleComment;
+import com.example.demo.domain.UserAccount;
 import com.example.demo.dto.ArticleCommentDto;
 import com.example.demo.dto.ArticleCommentUpdateDto;
 import com.example.demo.dto.ArticleDto;
 import com.example.demo.dto.ArticleUpdateDto;
 import com.example.demo.repository.ArticleCommentRepository;
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.UserAccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,13 +38,18 @@ class ArticleCommentServiceTest {
     @Mock
     private ArticleCommentRepository articleCommentRepository;
 
+    @Mock
+    private UserAccountRepository userAccountRepository;
+
     @DisplayName("게시글ID로 댓글 조회")
     @Test
     void getCommentsByArticleId() {
         // given
         Long articleId = 1L;
+        UserAccount userAccount = userAccountRepository.save(
+                UserAccount.of("uno", "password", "a@mail.com", "nick"));
         BDDMockito.given(articleRepository.findById(articleId)).willReturn(
-                Optional.of(Article.of("title", "content", "#java")));
+                Optional.of(Article.of(userAccount,"title", "content", "#java")));
 
         // when
         List<ArticleCommentDto> comments = sut.searchArticleComments(articleId);

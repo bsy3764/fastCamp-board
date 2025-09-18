@@ -12,16 +12,16 @@ public record UserAccountDto(
         LocalDateTime modifiedAt,
         String modifiedBy,
         String id,
-        String password,
+        String userPassword,
         String email,
         String nickname,
         String memo
 ) {
-    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String password, String email, String nickname, String memo) {
-        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, password, email, nickname, memo);
+    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String userPassword, String email, String nickname, String memo) {
+        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, userPassword, email, nickname, memo);
     }
 
-    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String password, String email, String nickname) {
-        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, password, email, nickname, null);
+    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String userPassword, String email, String nickname) {
+        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, userPassword, email, nickname, null);
     }
 }
