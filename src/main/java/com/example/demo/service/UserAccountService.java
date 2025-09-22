@@ -22,7 +22,6 @@ public class UserAccountService {
     }
 
     public UserAccountDto saveUser(UserAccount userAccount) {
-        return UserAccountDto.of(LocalDateTime.now(), "uno", LocalDateTime.now(), "uno",
-                "uno", "password", "e@mail.com", "nick");
+        return null;
     }
 }

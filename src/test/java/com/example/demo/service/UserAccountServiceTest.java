@@ -31,7 +31,7 @@ class UserAccountServiceTest {
         // given
         String userId = "uno";
         BDDMockito.given(repository.findById(userId)).
-                willReturn(Optional.of(UserAccount.of(userId, "password", "test@mail.com", "nick")));
+                willReturn(Optional.of(createUserAccount()));
 
         // when
         Optional<UserAccountDto> user = sut.searchUser(userId);
@@ -61,8 +61,8 @@ class UserAccountServiceTest {
     @Test
     void createUser() {
         // given
-        UserAccount userAccount = UserAccount.of("uno", "password", "e@mail.com", "nick");
-        UserAccount saved = UserAccount.of("uno", "password", "e@mail.com", "nick");
+        UserAccount userAccount = createUserAccount();
+        UserAccount saved = createUserAccount();
 
         BDDMockito.given(repository.save(userAccount)).
                 willReturn(saved);
@@ -75,4 +75,8 @@ class UserAccountServiceTest {
         BDDMockito.then(repository).should().save(userAccount);
     }
 
+    // Fixture 작성
+    private UserAccount createUserAccount() {
+        return UserAccount.of("uno", "password", "a@mail.com", "nick");
+    }
 }

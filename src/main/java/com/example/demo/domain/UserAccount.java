@@ -13,8 +13,12 @@ import java.util.Objects;
 public class UserAccount extends AuditingFields {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Setter
     @Column(nullable = false, length = 50)
-    private String id;
+    private String userId;
 
     @Setter
     @Column(nullable = false)
@@ -34,31 +38,31 @@ public class UserAccount extends AuditingFields {
     // JPA 엔티티 하이버네이트는 기본 생성자 필수
     protected UserAccount() {}
 
-    private UserAccount(String id, String userPassword, String email, String nickname, String memo) {
-        this.id = id;
+    private UserAccount(String userId, String userPassword, String email, String nickname, String memo) {
+        this.userId = userId;
         this.userPassword = userPassword;
         this.email = email;
         this.nickname = nickname;
         this.memo = memo;
     }
 
-    public static UserAccount of(String id, String userPassword, String email, String nickname, String memo) {
-        return new UserAccount(id, userPassword, email, nickname, memo);
+    public static UserAccount of(String userId, String userPassword, String email, String nickname, String memo) {
+        return new UserAccount(userId, userPassword, email, nickname, memo);
     }
 
-    public static UserAccount of(String id, String userPassword, String email, String nickname) {
-        return UserAccount.of(id, userPassword, email, nickname, null);
+    public static UserAccount of(String userId, String userPassword, String email, String nickname) {
+        return UserAccount.of(userId, userPassword, email, nickname, null);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         UserAccount that = (UserAccount) o;
-        return Objects.equals(id, that.id);
+        return Objects.equals(userId, that.userId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hashCode(userId);
     }
 }

@@ -29,7 +29,7 @@ public class ArticleCommentService {
     }
 
 
-    public void updateArticleComment(Long articleCommentId, ArticleCommentUpdateDto dto) {
+    public void updateArticleComment(ArticleCommentDto dto) {
 
     }
 

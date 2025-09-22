@@ -1,5 +1,7 @@
 package com.example.demo.dto;
 
+import com.example.demo.domain.UserAccount;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -7,21 +9,47 @@ import java.time.LocalDateTime;
  * DTO for {@link com.example.demo.domain.UserAccount}
  */
 public record UserAccountDto(
-        LocalDateTime createdAt,
-        String createdBy,
-        LocalDateTime modifiedAt,
-        String modifiedBy,
-        String id,
+        Long id,
+        String userId,
         String userPassword,
         String email,
         String nickname,
-        String memo
+        String memo,
+        LocalDateTime createdAt,
+        String createdBy,
+        LocalDateTime modifiedAt,
+        String modifiedBy
 ) {
-    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String userPassword, String email, String nickname, String memo) {
-        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, userPassword, email, nickname, memo);
+    public static UserAccountDto of(
+            Long id,
+            String userId,
+            String userPassword,
+            String email,
+            String nickname,
+            String memo,
+            LocalDateTime createdAt,
+            String createdBy,
+            LocalDateTime modifiedAt,
+            String modifiedBy) {
+        return new UserAccountDto(id, userId, userPassword, email, nickname, memo,
+                createdAt, createdBy, modifiedAt, modifiedBy);
     }
 
-    public static UserAccountDto of(LocalDateTime createdAt, String createdBy, LocalDateTime modifiedAt, String modifiedBy, String id, String userPassword, String email, String nickname) {
-        return new UserAccountDto(createdAt, createdBy, modifiedAt, modifiedBy, id, userPassword, email, nickname, null);
+    public static UserAccountDto from(UserAccount entity) {
+        return new UserAccountDto(
+                entity.getId(),
+                entity.getUserId(),
+                entity.getUserPassword(),
+                entity.getEmail(),
+                entity.getNickname(),
+                entity.getMemo(),
+                entity.getCreatedAt(),
+                entity.getCreatedBy(),
+                entity.getModifiedAt(),
+                entity.getModifiedBy());
+    }
+
+    public UserAccount toEntity() {
+        return UserAccount.of(userId, userPassword, email, nickname, memo);
     }
 }

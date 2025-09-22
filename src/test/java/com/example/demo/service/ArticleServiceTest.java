@@ -1,10 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.Article;
+import com.example.demo.domain.UserAccount;
 import com.example.demo.domain.type.SearchType;
 import com.example.demo.dto.ArticleDto;
 import com.example.demo.dto.ArticleUpdateDto;
+import com.example.demo.dto.ArticleWithCommentsDto;
+import com.example.demo.dto.UserAccountDto;
 import com.example.demo.repository.ArticleRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,10 +18,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 @DisplayName("게시글 테스트")
 @ExtendWith(MockitoExtension.class) // mockito 사용
@@ -29,16 +36,36 @@ class ArticleServiceTest {
     @Mock   // @InjectMocks 이외의 객체들에 붙임
     private ArticleRepository repository;
 
-    @DisplayName("게시글 검색 테스트")
+    @DisplayName("게시글 검색 테스트 - 검색어 없이 검색하면 게시글 페이지 반환")
     @Test
-    void searchingArticles() {
+    void searchArticlesNoKeyword() {
         // given
+        Pageable pageable = Pageable.ofSize(20);
+        BDDMockito.given(repository.findAll(pageable)).willReturn(Page.empty());
 
         // when
-        Page<ArticleDto> articles = sut.searchArticles(SearchType.TITLE, "keyword");
+        Page<ArticleDto> articles = sut.searchArticles(null, null, pageable);
 
         // then
-        assertThat(articles).isNotNull();
+        assertThat(articles).isEmpty();
+        BDDMockito.then(repository).should().findAll(pageable);
+    }
+
+    @DisplayName("게시글 검색 테스트 - 검색어 검색")
+    @Test
+    void searchingArticlesUseKeyword() {
+        // given
+        SearchType searchType = SearchType.TITLE;
+        String searchKeyword = "title";
+        Pageable pageable = Pageable.ofSize(20);
+        BDDMockito.given(repository.findAll(pageable)).willReturn(Page.empty());
+
+        // when
+        Page<ArticleDto> articles = sut.searchArticles(searchType, searchKeyword, pageable);
+
+        // then
+        assertThat(articles).isEmpty();
+        BDDMockito.then(repository).should().findAll(pageable);
     }
 
     @DisplayName("게시글 검색 테스트")
@@ -46,23 +73,45 @@ class ArticleServiceTest {
     void searchingArticle() {
         // given
         Long articleId = 1L;
+        Article article = createArticle();
+        BDDMockito.given(repository.findById(articleId)).willReturn(Optional.of(article));
 
         // when
-        ArticleDto article = sut.searchArticle(articleId);
+        ArticleWithCommentsDto dto = sut.searchArticle(articleId);
 
         // then
-        assertThat(article).isNotNull();
+        assertThat(dto)
+                .hasFieldOrPropertyWithValue("title", article.getTitle())
+                .hasFieldOrPropertyWithValue("content", article.getContent())
+                .hasFieldOrPropertyWithValue("hashtag", article.getHashtag());
+        BDDMockito.then(repository).should().findById(articleId);
+    }
+
+    @DisplayName("없는 게시글 조회")
+    @Test
+    void searchNotExistArticle() {
+        // given
+        Long articleId = 0L;
+        BDDMockito.given(repository.findById(articleId)).willReturn(Optional.empty());
+
+        // when
+        Throwable throwable = catchThrowable(() -> sut.searchArticle(articleId));
+
+        // then
+        assertThat(throwable).isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("게시글이 없습니다.");
+        BDDMockito.then(repository).should().findById(articleId);
     }
 
     @DisplayName("게시글 생성")
     @Test
-    void createArticle() {
+    void insertArticle() {
         // given
-        ArticleDto dto = ArticleDto.of(LocalDateTime.now(), "uno", "title", "content", "#java");
+        ArticleDto dto = createArticleDto();
 
         // repository에서 save() 가 호출될 것
         BDDMockito.given(repository.save(ArgumentMatchers.any(Article.class)))
-                .willReturn(null);
+                .willReturn(createArticle());
 
         // when
         sut.saveArticle(dto);
@@ -76,17 +125,21 @@ class ArticleServiceTest {
     @Test
     void updateArticle() {
         // given
-        Long articleId = 1L;
-        ArticleUpdateDto dto = ArticleUpdateDto.of("title", "content", "#java");
+        Article article = createArticle();
+        ArticleDto articleDto = createArticleDto();
 
         // repository에서 save() 가 호출될 것
         BDDMockito.given(repository.save(ArgumentMatchers.any(Article.class)))
                 .willReturn(null);
 
         // when
-        sut.updateArticle(articleId, dto);
+        sut.updateArticle(articleDto);
 
         // then
+        assertThat(article)
+                .hasFieldOrPropertyWithValue("title", articleDto.title())
+                .hasFieldOrPropertyWithValue("content", articleDto.content())
+                .hasFieldOrPropertyWithValue("hashtag", articleDto.hashtag());
         // repository에서 save() 가 호출되었는지 확인
         BDDMockito.then(repository).should().save(ArgumentMatchers.any(Article.class));
     }
@@ -98,14 +151,64 @@ class ArticleServiceTest {
         Long articleId = 1L;
 
         // repository에서 delete() 가 호출될 것
-        BDDMockito.willDoNothing().given(repository).delete(ArgumentMatchers.any(Article.class));
+        BDDMockito.willDoNothing().given(repository).deleteById(articleId);
 
         // when
         sut.deleteArticle(articleId);
 
         // then
         // repository에서 delete() 가 호출되었는지 확인
-        BDDMockito.then(repository).should().delete(ArgumentMatchers.any(Article.class));
+        BDDMockito.then(repository).should().deleteById(articleId);
     }
 
+    // Fixture 작성
+    private UserAccount createUserAccount() {
+        return UserAccount.of(
+                "uno",
+                "password",
+                "uno@email.com",
+                "Uno",
+                null
+        );
+    }
+
+    private Article createArticle() {
+        return Article.of(
+                createUserAccount(),
+                "title",
+                "content",
+                "#java"
+        );
+    }
+
+    private ArticleDto createArticleDto() {
+        return createArticleDto("title", "content", "#java");
+    }
+
+    private ArticleDto createArticleDto(String title, String content, String hashtag) {
+        return ArticleDto.of(1L,
+                createUserAccountDto(),
+                title,
+                content,
+                hashtag,
+                LocalDateTime.now(),
+                "Uno",
+                LocalDateTime.now(),
+                "Uno");
+    }
+
+    private UserAccountDto createUserAccountDto() {
+        return UserAccountDto.of(
+                1L,
+                "uno",
+                "password",
+                "uno@mail.com",
+                "Uno",
+                "This is memo",
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
 }

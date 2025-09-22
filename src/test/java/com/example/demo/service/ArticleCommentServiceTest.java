@@ -3,13 +3,11 @@ package com.example.demo.service;
 import com.example.demo.domain.Article;
 import com.example.demo.domain.ArticleComment;
 import com.example.demo.domain.UserAccount;
-import com.example.demo.dto.ArticleCommentDto;
-import com.example.demo.dto.ArticleCommentUpdateDto;
-import com.example.demo.dto.ArticleDto;
-import com.example.demo.dto.ArticleUpdateDto;
+import com.example.demo.dto.*;
 import com.example.demo.repository.ArticleCommentRepository;
 import com.example.demo.repository.ArticleRepository;
 import com.example.demo.repository.UserAccountRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,10 +44,9 @@ class ArticleCommentServiceTest {
     void getCommentsByArticleId() {
         // given
         Long articleId = 1L;
-        UserAccount userAccount = userAccountRepository.save(
-                UserAccount.of("uno", "password", "a@mail.com", "nick"));
-        BDDMockito.given(articleRepository.findById(articleId)).willReturn(
-                Optional.of(Article.of(userAccount,"title", "content", "#java")));
+        ArticleComment comment = createArticleComment("content");
+        BDDMockito.given(articleCommentRepository.findByArticle_Id(articleId)).willReturn(
+                List.of(comment));
 
         // when
         List<ArticleCommentDto> comments = sut.searchArticleComments(articleId);
@@ -63,7 +60,8 @@ class ArticleCommentServiceTest {
     @Test
     void createComment() {
         // given
-        ArticleCommentDto dto = ArticleCommentDto.of(LocalDateTime.now(), "uno", "content");
+        ArticleCommentDto dto = createArticleCommentDto("content");
+        BDDMockito.given(articleRepository.getReferenceById(dto.articleId())).willReturn(createArticle());
         // repository에서 save() 가 호출될 것
         BDDMockito.given(articleCommentRepository.save(ArgumentMatchers.any(ArticleComment.class)))
                 .willReturn(null);
@@ -73,6 +71,23 @@ class ArticleCommentServiceTest {
 
         // then
         // repository에서 save() 가 호출되었는지 확인
+        BDDMockito.then(articleRepository).should().getReferenceById(dto.articleId());
+        BDDMockito.then(articleCommentRepository).should().save(ArgumentMatchers.any(ArticleComment.class));
+    }
+
+    @DisplayName("댓글 작성 후 저장시, 그 사이 게시글이 삭제되면 경고")
+    @Test
+    void saveCommentNotExistArticle() {
+        // given
+        ArticleCommentDto dto = createArticleCommentDto("content");
+        BDDMockito.given(articleRepository.getReferenceById(dto.articleId())).willThrow(EntityNotFoundException.class);
+
+        // when
+        sut.saveArticleComment(dto);
+
+        // then
+        // repository에서 save() 가 호출되었는지 확인
+        BDDMockito.then(articleRepository).should().getReferenceById(dto.articleId());
         BDDMockito.then(articleCommentRepository).should().save(ArgumentMatchers.any(ArticleComment.class));
     }
 
@@ -80,19 +95,25 @@ class ArticleCommentServiceTest {
     @Test
     void updateComment() {
         // given
-        Long articleCommentId = 1L;
-        ArticleCommentUpdateDto dto = ArticleCommentUpdateDto.of("content");
+        String oldContent = "content";
+        String updatedContent = "댓글";
+        ArticleComment articleComment = createArticleComment(oldContent);
+        ArticleCommentDto dto = createArticleCommentDto(updatedContent);
+        BDDMockito.given(articleCommentRepository.getReferenceById(dto.id())).willReturn(articleComment);
 
-        // repository에서 save() 가 호출될 것
-        BDDMockito.given(articleCommentRepository.save(ArgumentMatchers.any(ArticleComment.class)))
-                .willReturn(null);
+        // repository에서 getReferenceById() 가 호출될 것
+        BDDMockito.given(articleCommentRepository.getReferenceById(dto.id()))
+                .willReturn(articleComment);
 
         // when
-        sut.updateArticleComment(articleCommentId, dto);
+        sut.updateArticleComment(dto);
 
         // then
-        // repository에서 save() 가 호출되었는지 확인
-        BDDMockito.then(articleCommentRepository).should().save(ArgumentMatchers.any(ArticleComment.class));
+        assertThat(articleComment.getContent())
+                .isNotEqualTo(oldContent)
+                .isEqualTo(updatedContent);
+        // repository에서 getReferenceById() 가 호출되었는지 확인
+        BDDMockito.then(articleCommentRepository).should().getReferenceById(dto.id());
     }
 
     @DisplayName("댓글 삭제")
@@ -102,14 +123,70 @@ class ArticleCommentServiceTest {
         Long articleCommentId = 1L;
 
         // repository에서 delete() 가 호출될 것
-        BDDMockito.willDoNothing().given(articleCommentRepository).delete(ArgumentMatchers.any(ArticleComment.class));
+        BDDMockito.willDoNothing().given(articleCommentRepository).deleteById(articleCommentId);
 
         // when
         sut.deleteArticleComment(articleCommentId);
 
         // then
         // repository에서 delete() 가 호출되었는지 확인
-        BDDMockito.then(articleCommentRepository).should().delete(ArgumentMatchers.any(ArticleComment.class));
+        BDDMockito.then(articleCommentRepository).should().deleteById(articleCommentId);
+    }
+
+    // Fixture 작성
+    private ArticleCommentDto createArticleCommentDto(String content) {
+        return ArticleCommentDto.of(
+                1L,
+                1L,
+                createUserAccountDto(),
+                content,
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
+
+    private UserAccountDto createUserAccountDto() {
+        return UserAccountDto.of(
+                1L,
+                "uno",
+                "password",
+                "uno@mail.com",
+                "Uno",
+                "This is memo",
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
+
+    private ArticleComment createArticleComment(String content) {
+        return ArticleComment.of(
+                Article.of(createUserAccount(), "title", "content", "hashtag"),
+                createUserAccount(),
+                content
+        );
+    }
+
+    private UserAccount createUserAccount() {
+        return UserAccount.of(
+                "uno",
+                "password",
+                "uno@email.com",
+                "Uno",
+                null
+        );
+    }
+
+    private Article createArticle() {
+        return Article.of(
+                createUserAccount(),
+                "title",
+                "content",
+                "#java"
+        );
     }
 
 }

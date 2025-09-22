@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @Import(SecurityConfig.class)
@@ -22,6 +23,9 @@ class MainControllerTest {
     @Test
     void redirectArticlesPage() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/"))
-                .andExpect(MockMvcResultMatchers.status().is3xxRedirection());
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.view().name("forward:/articles"))
+                .andExpect(MockMvcResultMatchers.forwardedUrl("/articles"))
+                .andDo(MockMvcResultHandlers.print());
     }
 }
