@@ -1,8 +1,7 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.ArticleComment;
 import com.example.demo.dto.ArticleCommentDto;
-import com.example.demo.dto.ArticleCommentUpdateDto;
-import com.example.demo.dto.ArticleUpdateDto;
 import com.example.demo.repository.ArticleCommentRepository;
 import com.example.demo.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +24,7 @@ public class ArticleCommentService {
     }
 
     public void saveArticleComment(ArticleCommentDto dto) {
-
     }
-
 
     public void updateArticleComment(ArticleCommentDto dto) {
 

@@ -18,10 +18,10 @@ public class UserAccountService {
     private final UserAccountRepository repository;
 
     public Optional<UserAccountDto> searchUser(String userId) {
-        return Optional.empty();
+        return repository.findById(userId).map(UserAccountDto::from);
     }
 
     public UserAccountDto saveUser(UserAccount userAccount) {
-        return null;
+        return UserAccountDto.from(repository.save(userAccount));
     }
 }
