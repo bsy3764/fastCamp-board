@@ -5,6 +5,7 @@ import com.example.demo.dto.ArticleCommentDto;
 import com.example.demo.dto.ArticleWithCommentsDto;
 import com.example.demo.dto.UserAccountDto;
 import com.example.demo.service.ArticleService;
+import com.example.demo.service.PaginationService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,17 +17,19 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 
 @DisplayName("뷰 컨트롤러 - 게시글")
 @Import(SecurityConfig.class)   // 테스트시 로그인안해서 로그인 없이 테스트 하기 위해
@@ -34,8 +37,12 @@ import static org.mockito.ArgumentMatchers.eq;
 class ArticleControllerTest {
 
     private final MockMvc mvc;
+
     @Autowired
     private ArticleService articleService;
+
+    @Autowired
+    private PaginationService paginationService;
 
     // ArticleService를 테스트에서 배제하기 위해
     // MockMvc가 api의 입출력만 테스트하기 위해
@@ -52,14 +59,49 @@ class ArticleControllerTest {
         // given
         BDDMockito.given(articleService.searchArticles(eq(null), eq(null), any(Pageable.class)))
                 .willReturn(Page.empty());
+        BDDMockito.given(paginationService.getPaginationBarNumbers(anyInt(), anyInt())).willReturn(List.of(0,1,2,3,4));
 
         // when & then
         mvc.perform(MockMvcRequestBuilders.get("/articles"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(MockMvcResultMatchers.view().name("articles/index"))
-                .andExpect(MockMvcResultMatchers.model().attributeExists("articles"));
+                .andExpect(MockMvcResultMatchers.model().attributeExists("articles"))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("paginationBarNumbers"));
         BDDMockito.then(articleService).should().searchArticles(eq(null), eq(null), any(Pageable.class));
+        BDDMockito.then(paginationService).should().getPaginationBarNumbers(anyInt(), anyInt());
+    }
+
+    @DisplayName("게시판 페이징, 정렬 기능")
+    void getArticleList_pagingAndSort_Test() throws Exception {
+        // given
+        String sortName = "title";
+        String direction = "desc";
+        int pageNumber = 0;
+        int pageSize = 5;
+        PageRequest pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc(sortName)));
+        List<Integer> barNumbers = List.of(1, 2, 3, 4, 5);
+        BDDMockito.given(articleService.searchArticles(null, null, pageable))
+                .willReturn(Page.empty());
+        BDDMockito.given(paginationService.getPaginationBarNumbers(pageable.getPageNumber(), Page.empty().getTotalPages()))
+                .willReturn(barNumbers);
+
+        // when
+        mvc.perform(
+                MockMvcRequestBuilders.get("/articles")
+                        .queryParam("Page", String.valueOf(pageNumber))
+                        .queryParam("size", String.valueOf(pageSize))
+                        .queryParam("sort", sortName + "," + direction)
+        )
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(MockMvcResultMatchers.view().name("articles/index"))
+                .andExpect(MockMvcResultMatchers.model().attributeExists("articles"))
+                .andExpect(MockMvcResultMatchers.model().attribute("paginationBarNumbers", barNumbers));
+        BDDMockito.then(articleService).should().searchArticles(null, null, pageable);
+        BDDMockito.then(paginationService).should().getPaginationBarNumbers(pageable.getPageNumber(), Page.empty().getTotalPages());
+
+        // then
     }
 
     @DisplayName("게시글 페이지")
@@ -105,6 +147,11 @@ class ArticleControllerTest {
         @Bean
         public ArticleService articleService() {
             return Mockito.mock(ArticleService.class);
+        }
+
+        @Bean
+        public PaginationService paginationService() {
+            return Mockito.mock(PaginationService.class);
         }
     }
 

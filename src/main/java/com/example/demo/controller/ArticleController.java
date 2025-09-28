@@ -5,7 +5,9 @@ import com.example.demo.dto.ArticleWithCommentsDto;
 import com.example.demo.dto.response.ArticleResponse;
 import com.example.demo.dto.response.ArticleWithCommentResponse;
 import com.example.demo.service.ArticleService;
+import com.example.demo.service.PaginationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -25,6 +27,7 @@ public class ArticleController {
     // DefaultLoginPageGenerationFilter 에서 제공하는 기본 로그인 화면 사용
 
     private final ArticleService service;
+    private final PaginationService paginationService;
 
     @GetMapping
     public String articles(
@@ -32,7 +35,12 @@ public class ArticleController {
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             ModelMap map) {
-        map.addAttribute("articles", service.searchArticles(searchType, keyword, pageable).map(ArticleResponse::from));
+        Page<ArticleResponse> articles = service.searchArticles(searchType, keyword, pageable).map(ArticleResponse::from);
+        List<Integer> barNumbers = paginationService.getPaginationBarNumbers(pageable.getPageNumber(), articles.getTotalPages());
+
+        map.addAttribute("articles", articles);
+        map.addAttribute("paginationBarNumbers", barNumbers);
+
         return "articles/index";
     }
 
