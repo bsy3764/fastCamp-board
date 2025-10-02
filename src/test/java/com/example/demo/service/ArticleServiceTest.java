@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,53 @@ class ArticleServiceTest {
         // then
         assertThat(articles).isEmpty();
         BDDMockito.then(articleRepository).should().findByTitleContaining(searchKeyword, pageable);
+    }
+
+    @DisplayName("게시글 검색 테스트 - keyword 없이 해시태그 검색")
+    @Test
+    void searchingArticlesUseHashtag_noKeyword() {
+        // given
+        Pageable pageable = Pageable.ofSize(20);
+
+        // when
+        Page<ArticleDto> articles = sut.searchArticlesViaHashtag(null, pageable);
+
+        // then
+        assertThat(articles).isEqualTo(Page.empty(pageable));
+        BDDMockito.then(articleRepository).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("게시글 검색 테스트 - 해시태그 검색")
+    @Test
+    void searchingArticlesUseHashtag() {
+        // given
+        String hashtag = "#java";
+        Pageable pageable = Pageable.ofSize(20);
+        BDDMockito.given(articleRepository.findByHashtag(hashtag, pageable))
+                .willReturn(Page.empty(pageable));
+
+        // when
+        Page<ArticleDto> articles = sut.searchArticlesViaHashtag(hashtag, pageable);
+
+        // then
+        assertThat(articles).isEqualTo(Page.empty(pageable));
+        BDDMockito.then(articleRepository).should().findByHashtag(hashtag, pageable);
+    }
+
+    @DisplayName("해시태그 리스트")
+    @Test
+    void getHashtagList() {
+        // given
+        List<String> expectedHashtags = List.of("#java", "#spring", "#boot");
+        BDDMockito.given(articleRepository.findALlDistinctHashtags())
+                .willReturn(expectedHashtags);
+
+        // when
+        List<String> actualHashtags = sut.getHashtags();
+
+        // then
+        assertThat(actualHashtags).isEqualTo(expectedHashtags);
+        BDDMockito.then(articleRepository).should().findALlDistinctHashtags();
     }
 
     @DisplayName("게시글 검색 테스트")
