@@ -3,7 +3,9 @@ package com.example.demo.repository;
 import com.example.demo.config.JpaConfig;
 import com.example.demo.domain.Article;
 import com.example.demo.domain.ArticleComment;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.demo.domain.UserAccount;
+import com.example.demo.dto.ArticleCommentDto;
+import com.example.demo.dto.UserAccountDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +13,13 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 // application.yml에서 spring.profiles로 프로필을 설정
-@ActiveProfiles("testdb")   // 설정한 프로필을 활성화
+@ActiveProfiles("test")   // 설정한 프로필을 활성화
 @DisplayName("JPA Conn test")
 @Import(JpaConfig.class)
 @DataJpaTest
@@ -24,12 +27,15 @@ class JpaRepositoryTest {
 
     private final ArticleRepository articleRepository;
     private final ArticleCommentRepository articleCommentRepository;
+    private final UserAccountRepository userAccountRepository;
 
     public JpaRepositoryTest(
             @Autowired ArticleRepository articleRepository,
-            @Autowired ArticleCommentRepository articleCommentRepository) {
+            @Autowired ArticleCommentRepository articleCommentRepository,
+            @Autowired UserAccountRepository userAccountRepository) {
         this.articleRepository = articleRepository;
         this.articleCommentRepository = articleCommentRepository;
+        this.userAccountRepository = userAccountRepository;
     }
 
     @Test
@@ -40,14 +46,14 @@ class JpaRepositoryTest {
         List<Article> articles = articleRepository.findAll();
 
         // then
-        assertThat(articles).isNotNull().hasSize(0);
+        assertThat(articles).isNotNull().hasSize(11);
     }
 
     @Test
     void insertTest() {
         // given
         long previousCount = articleRepository.count();
-        Article article = Article.of("new title", "new content", "#spring");
+        Article article = createArticle();
 
         // when
         Article saved = articleRepository.save(article);
@@ -59,7 +65,7 @@ class JpaRepositoryTest {
     @Test
     void updateTest() {
         // given
-        Article article = Article.of("new title", "new content", "#spring");
+        Article article = createArticle();
         Article saved = articleRepository.save(article);
         String updatedHashtag = "#springboot";
         saved.setHashtag(updatedHashtag);
@@ -74,11 +80,12 @@ class JpaRepositoryTest {
     @Test
     void deleteTest() {
         // given
-        Article article = Article.of("new title", "new content", "#spring");
+        UserAccount userAccount = userAccountRepository.save(createUserAccount());
+        Article article = createArticle();
 
         // 댓글을 Article에 직접 추가해서 연관관계 주입
-        ArticleComment comment1 = ArticleComment.of(article, "comment1");
-        ArticleComment comment2 = ArticleComment.of(article, "comment2");
+        ArticleComment comment1 = ArticleComment.of(article, userAccount,"comment1");
+        ArticleComment comment2 = ArticleComment.of(article, userAccount,"comment2");
 
         // 연관관계 수동 설정 (양방향을 article -> comment, comment -> article 양쪽 연결)
         article.getArticleComments().add(comment1);
@@ -97,6 +104,63 @@ class JpaRepositoryTest {
         // then
         assertThat(articleRepository.count()).isEqualTo(previousArticleCount - 1);
         assertThat(articleCommentRepository.count()).isEqualTo(previousCommentCount - deletedCommentSize);
+    }
+
+    // Fixture 작성
+    private ArticleCommentDto createArticleCommentDto(String content) {
+        return ArticleCommentDto.of(
+                1L,
+                1L,
+                createUserAccountDto(),
+                content,
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
+
+    private UserAccountDto createUserAccountDto() {
+        return UserAccountDto.of(
+                "uno",
+                "password",
+                "uno@mail.com",
+                "Uno",
+                "This is memo",
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
+
+    private ArticleComment createArticleComment(String content) {
+        return ArticleComment.of(
+                Article.of(createUserAccount(), "title", "content", "hashtag"),
+                createUserAccount(),
+                content
+        );
+    }
+
+    private UserAccount createUserAccount() {
+        return UserAccount.of(
+                "uno",
+                "password",
+                "uno@email.com",
+                "Uno",
+                null
+        );
+    }
+
+    private Article createArticle() {
+        UserAccount savedUser = userAccountRepository.save(createUserAccount());
+
+        return Article.of(
+                savedUser,
+                "title",
+                "content",
+                "#java"
+        );
     }
 
 }
