@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("댓글 테스트")
+@DisplayName("비즈니스 로직 - 댓글")
 @ExtendWith(MockitoExtension.class) // mockito 사용
 class ArticleCommentServiceTest {
 
@@ -39,7 +39,7 @@ class ArticleCommentServiceTest {
     @Mock
     private UserAccountRepository userAccountRepository;
 
-    @DisplayName("게시글ID로 댓글 조회")
+    @DisplayName("게시글 ID로 조회하면, 해당하는 댓글 리스트를 반환")
     @Test
     void getCommentsByArticleId() {
         // given
@@ -56,12 +56,13 @@ class ArticleCommentServiceTest {
         BDDMockito.then(articleRepository).should().findById(articleId);
     }
 
-    @DisplayName("댓글 저장")
+    @DisplayName("댓글 정보를 입력하면, 댓글을 저장")
     @Test
     void createComment() {
         // given
         ArticleCommentDto dto = createArticleCommentDto("content");
         BDDMockito.given(articleRepository.getReferenceById(dto.articleId())).willReturn(createArticle());
+        BDDMockito.given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(createUserAccount());
         // repository에서 save() 가 호출될 것
         BDDMockito.given(articleCommentRepository.save(ArgumentMatchers.any(ArticleComment.class)))
                 .willReturn(null);
@@ -72,10 +73,11 @@ class ArticleCommentServiceTest {
         // then
         // repository에서 save() 가 호출되었는지 확인
         BDDMockito.then(articleRepository).should().getReferenceById(dto.articleId());
+        BDDMockito.then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
         BDDMockito.then(articleCommentRepository).should().save(ArgumentMatchers.any(ArticleComment.class));
     }
 
-    @DisplayName("댓글 작성 후 저장시, 그 사이 게시글이 삭제되면 경고")
+    @DisplayName("댓글 저장을 시도했는데 맞는 게시글이 없으면, 경고 로그를 찍고 아무것도 안 함")
     @Test
     void saveCommentNotExistArticle() {
         // given
@@ -88,10 +90,11 @@ class ArticleCommentServiceTest {
         // then
         // repository에서 save() 가 호출되었는지 확인
         BDDMockito.then(articleRepository).should().getReferenceById(dto.articleId());
+        BDDMockito.then(userAccountRepository).shouldHaveNoInteractions();
         BDDMockito.then(articleCommentRepository).should().save(ArgumentMatchers.any(ArticleComment.class));
     }
 
-    @DisplayName("댓글 수정")
+    @DisplayName("댓글 정보를 입력하면, 댓글을 수정")
     @Test
     void updateComment() {
         // given
@@ -116,7 +119,21 @@ class ArticleCommentServiceTest {
         BDDMockito.then(articleCommentRepository).should().getReferenceById(dto.id());
     }
 
-    @DisplayName("댓글 삭제")
+    @DisplayName("없는 댓글 정보를 수정하려고 하면, 경고 로그를 찍고 아무 것도 안 함")
+    @Test
+    void updateArticleComment_nonExistArticleComment() {
+        // Given
+        ArticleCommentDto dto = createArticleCommentDto("댓글");
+        BDDMockito.given(articleCommentRepository.getReferenceById(dto.id())).willThrow(EntityNotFoundException.class);
+
+        // When
+        sut.updateArticleComment(dto);
+
+        // Then
+        BDDMockito.then(articleCommentRepository).should().getReferenceById(dto.id());
+    }
+
+    @DisplayName("댓글 ID를 입력하면, 댓글을 삭제")
     @Test
     void deleteComment() {
         // given
@@ -149,7 +166,6 @@ class ArticleCommentServiceTest {
 
     private UserAccountDto createUserAccountDto() {
         return UserAccountDto.of(
-                1L,
                 "uno",
                 "password",
                 "uno@mail.com",

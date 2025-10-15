@@ -2,6 +2,7 @@ package com.example.demo.dto;
 
 import com.example.demo.domain.Article;
 import com.example.demo.domain.ArticleComment;
+import com.example.demo.domain.UserAccount;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -44,7 +45,11 @@ public record ArticleCommentDto(
                 entity.getModifiedBy());
     }
 
-    public ArticleComment toEntity(Article entity) {
-        return ArticleComment.of(entity, userAccountDto.toEntity(), content);
+    public static ArticleCommentDto of(Long articleId, UserAccountDto userAccountDto, String content) {
+        return new ArticleCommentDto(null, articleId, userAccountDto, content, null, null, null, null);
+    }
+
+    public ArticleComment toEntity(Article article, UserAccount userAccount) {
+        return ArticleComment.of(article, userAccount, content);
     }
 }

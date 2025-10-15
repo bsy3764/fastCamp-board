@@ -7,6 +7,7 @@ import com.example.demo.dto.ArticleWithCommentsDto;
 import com.example.demo.dto.UserAccountDto;
 import com.example.demo.service.ArticleService;
 import com.example.demo.service.PaginationService;
+import com.example.demo.util.FormDataEncoder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,11 +35,12 @@ import java.util.Set;
 import static org.mockito.ArgumentMatchers.*;
 
 @DisplayName("뷰 컨트롤러 - 게시글")
-@Import(SecurityConfig.class)   // 테스트시 로그인안해서 로그인 없이 테스트 하기 위해
+@Import({SecurityConfig.class, FormDataEncoder.class})   // 테스트시 로그인안해서 로그인 없이 테스트 하기 위해
 @WebMvcTest(ArticleController.class) // 지정한 컨트롤러만 로딩해서 테스트
 class ArticleControllerTest {
 
     private final MockMvc mvc;
+    private final FormDataEncoder formDataEncoder;
 
     @Autowired
     private ArticleService articleService;
@@ -53,11 +55,12 @@ class ArticleControllerTest {
 //    @MockBean <- deprecated 되므로 맨 아래 MockConfig 추가
 //    private ArticleService service;
 
-    public ArticleControllerTest(@Autowired MockMvc mvc) {
+    public ArticleControllerTest(@Autowired MockMvc mvc, @Autowired FormDataEncoder formDataEncoder) {
         this.mvc = mvc;
+        this.formDataEncoder = formDataEncoder;
     }
 
-    @DisplayName("게시판 리스트 페이지")
+    @DisplayName("[view][GET] 게시글 리스트 (게시판) 페이지 - 정상 호출")
     @Test
     void getMethodArticleListTest() throws Exception {
         // given
@@ -76,7 +79,7 @@ class ArticleControllerTest {
         BDDMockito.then(paginationService).should().getPaginationBarNumbers(anyInt(), anyInt());
     }
 
-    @DisplayName("게시판 페이징, 정렬 기능")
+    @DisplayName("[view][GET] 게시글 리스트 (게시판) 페이지 - 페이징, 정렬 기능")
     @Test
     void getArticleList_pagingAndSort_Test() throws Exception {
         // given
@@ -107,7 +110,7 @@ class ArticleControllerTest {
         BDDMockito.then(paginationService).should().getPaginationBarNumbers(pageable.getPageNumber(), Page.empty().getTotalPages());
     }
 
-    @DisplayName("게시판 페이징, 검색어")
+    @DisplayName("[view][GET] 게시글 리스트 (게시판) 페이지 - 검색어와 함께 호출")
     @Test
     void getArticleList_pagingAndKeyword_Test() throws Exception {
         // given
@@ -133,12 +136,12 @@ class ArticleControllerTest {
         BDDMockito.then(paginationService).should().getPaginationBarNumbers(anyInt(), anyInt());
     }
 
-    @DisplayName("게시글 페이지")
+    @DisplayName("[view][GET] 게시글 페이지 - 정상 호출")
     @Test
     void getMethodArticleTest() throws Exception {
         // given
         long articleId = 1L;
-        BDDMockito.given(articleService.searchArticle(articleId))
+        BDDMockito.given(articleService.getArticleWithComments(articleId))
                 .willReturn(createArticleWithCommentsDto());
 
         // then
@@ -148,11 +151,11 @@ class ArticleControllerTest {
                 .andExpect(MockMvcResultMatchers.view().name("articles/detail"))
                 .andExpect(MockMvcResultMatchers.model().attributeExists("article"))
                 .andExpect(MockMvcResultMatchers.model().attributeExists("articleComments"));
-        BDDMockito.then(articleService).should().searchArticle(articleId);
+        BDDMockito.then(articleService).should().getArticleWithComments(articleId);
     }
 
     @Disabled
-    @DisplayName("게시글 검색 전용 페이지")
+    @DisplayName("[view][GET] 게시글 검색 전용 페이지 - 정상 호출")
     @Test
     void getMethodArticleSearchTest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/articles/search"))
@@ -161,7 +164,8 @@ class ArticleControllerTest {
                 .andExpect(MockMvcResultMatchers.view().name("articles/search"));
     }
 
-    @DisplayName("게시글 해시태그 검색 페이지 - 해시태그 없이 검색")
+    @DisplayName("[view][GET] 게시글 해시태그 검색 페이지 - 정상 호출")
+
     @Test
     void getMethodArticle_NoHashtagSearchTest() throws Exception {
         // given
@@ -184,7 +188,7 @@ class ArticleControllerTest {
         BDDMockito.then(articleService).should().getHashtags();
     }
 
-    @DisplayName("게시글 해시태그 검색 페이지")
+    @DisplayName("[view][GET] 게시글 해시태그 검색 페이지 - 정상 호출, 해시태그 입력")
     @Test
     void getMethodArticleHashtagSearchTest() throws Exception {
         // given
@@ -226,7 +230,6 @@ class ArticleControllerTest {
     // Fixture 작성
     private UserAccountDto createUserAccountDto() {
         return UserAccountDto.of(
-                1L,
                 "uno",
                 "password",
                 "uno@mail.com",
